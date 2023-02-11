@@ -1,7 +1,9 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+
 from datetime import datetime
+import sqlite3
 
 bot = commands.Bot(command_prefix="!", intents = discord.Intents.default())
 TOKEN = "MTA2MjkxNjU2NDMzNDE0OTczNA.G6QQ23.evo2wsorKEKq-4lXwHQKEwMHk7IbROV1X0DfZs"
@@ -16,9 +18,19 @@ async def on_ready():
 
 @bot.tree.command(name="출석체크")
 async def check(interaction: discord.Interaction):
-    await interaction.response.send_message(f"{interaction.user.display_name} 출석했습니다.\n{datetime.today().strftime('%Y-%m-%d %H:%M')}")
-    #user.name -> 실제 사용자 이름
-    #user.display_name -> 서버에서 설정한 별명
+    date_time = datetime.today().strftime('%Y-%m-%d %H:%M')
+    await interaction.response.send_message(f"{interaction.user.display_name} 출석했습니다.\n{date_time}")
+    # user.name -> 실제 사용자 이름
+    # user.display_name -> 서버에서 설정한 별명
+
+    conn = sqlite3.connect('Attendance.db')
+    cur = conn.cursor()
+    sql1 = "CREATE TABLE IF NOT EXISTS attTBL(name text,date_time text);"
+    sql2 = "INSERT INTO attTBL(name,date_time) values (?,?);"
+    cur.execute(sql1)
+    cur.execute(sql2, (interaction.user.display_name, date_time))
+    conn.commit()
+    cur.close()
 
 @bot.tree.command(name="say")
 @app_commands.describe(thing_to_say = "What should I say?")
