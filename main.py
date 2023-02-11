@@ -1,6 +1,7 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+from datetime import datetime
 
 bot = commands.Bot(command_prefix="!", intents = discord.Intents.default())
 TOKEN = "MTA2MjkxNjU2NDMzNDE0OTczNA.G6QQ23.evo2wsorKEKq-4lXwHQKEwMHk7IbROV1X0DfZs"
@@ -15,7 +16,7 @@ async def on_ready():
 
 @bot.tree.command(name="출석체크")
 async def check(interaction: discord.Interaction):
-    await interaction.response.send_message(f"{interaction.user.display_name} 출석했습니다.\n(여기날짜)")
+    await interaction.response.send_message(f"{interaction.user.display_name} 출석했습니다.\n{datetime.today().strftime('%Y-%m-%d %H:%M')}")
     #user.name -> 실제 사용자 이름
     #user.display_name -> 서버에서 설정한 별명
 
