@@ -37,4 +37,15 @@ async def check(interaction: discord.Interaction):
 async def say(interaction: discord.Interaction, thing_to_say: str):
     await interaction.response.send_message(f"{interaction.user.name} said: '{thing_to_say}'")
 
+@bot.tree.command(name="select")
+async def db(interaction: discord.Interaction):
+    conn = sqlite3.connect('Attendance.db')
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM attTBL')
+    lrow=[]
+    for row in cur:
+        lrow.append(list(row))
+    await interaction.response.send_message(f"{lrow}")
+    cur.close()
+
 bot.run(TOKEN)
