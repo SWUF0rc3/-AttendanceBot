@@ -37,7 +37,7 @@ async def check(interaction: discord.Interaction):
 async def say(interaction: discord.Interaction, thing_to_say: str):
     await interaction.response.send_message(f"{interaction.user.name} said: '{thing_to_say}'")
 
-@bot.tree.command(name="DB 조회")
+@bot.tree.command(name="db조회")
 async def db(interaction: discord.Interaction):
     conn = sqlite3.connect('Attendance.db')
     cur = conn.cursor()
@@ -47,5 +47,14 @@ async def db(interaction: discord.Interaction):
         lrow.append(list(row))
     await interaction.response.send_message(f"{lrow}")
     cur.close()
+
+@bot.tree.command(name="resetdb")
+async def reset(interaction:discord.Interaction):
+    conn = sqlite3.connect('Attendance.db')
+    cur = conn.cursor()
+    sql3 = "DROP TABLE IF EXISTS attTBL"
+    cur.execute(sql3)
+    cur.close()
+    await interaction.response.send_message(f"초기화")
 
 bot.run(TOKEN)
