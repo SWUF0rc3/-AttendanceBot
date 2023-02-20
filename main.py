@@ -1,32 +1,80 @@
-from cmath import log
-from distutils.sysconfig import PREFIX
 import discord
-from dotenv import load_dotenv
-import os
-load_dotenv()
+from discord import app_commands
+from discord.ext import commands
 
-PREFIX = os.environ['PREFIX']
-TOKEN = os.environ['TOKEN']
+from datetime import datetime
+import sqlite3
+import itertools
 
-client = discord.Client()
-
-@client.event
+bot = commands.Bot(command_prefix="!", intents = discord.Intents.default())
+TOKEN = "MTA2MjkxNjU2NDMzNDE0OTczNA.G6QQ23.evo2wsorKEKq-4lXwHQKEwMHk7IbROV1X0DfZs"
+@bot.event
 async def on_ready():
-    print(f'Logged in as {client.user}.')
+    print("봇 실행됨")
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} command(s)")
+    except Exception as e :
+        print(e)
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
+@bot.tree.command(name="출석체크")
+async def check(interaction: discord.Interaction):
+    date_rec = datetime.today().strftime('%Y-%m-%d')
+    time_rec = datetime.today().strftime('%H:%M')
 
-    if message.content == f'{PREFIX}call':
-        await message.channel.send("callback!")
+    await interaction.response.send_message(f"{interaction.user.display_name} 출석했습니다.\n{date_rec} {time_rec}")
+    # user.name -> 실제 사용자 이름
+    # user.display_name -> 서버에서 설정한 별명
 
-    if message.content.startswith(f'{PREFIX}hello'):
-        await message.channel.send('Hello!')
+    conn = sqlite3.connect('Attendance.db')
+    cur = conn.cursor()
+    sql1 = "CREATE TABLE IF NOT EXISTS attTBL(name text,date text, time text);"
+    sql2 = "INSERT INTO attTBL(name,date,time) values (?,?,?);"
+    cur.execute(sql1)
+    cur.execute(sql2, (interaction.user.display_name, date_rec, time_rec))
+    conn.commit()
+    cur.close()
 
+@bot.tree.command(name="say")
+@app_commands.describe(thing_to_say = "What should I say?")
+async def say(interaction: discord.Interaction, thing_to_say: str):
+    await interaction.response.send_message(f"{interaction.user.name} said: '{thing_to_say}'")
 
-try:
-    client.run(TOKEN)
-except discord.errors.LoginFailure as e:
-    print("Improper token has been passed.")
+@bot.tree.command(name="db조회")
+async def db(interaction: discord.Interaction):
+    conn = sqlite3.connect('Attendance.db')
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM attTBL')
+    db_list = []
+    for row in cur:
+        db_list.append(list(row))
+    await interaction.response.send_message(f"{db_list}")
+    cur.close()
+
+@bot.tree.command(name="resetdb")
+async def reset(interaction:discord.Interaction):
+    conn = sqlite3.connect('Attendance.db')
+    cur = conn.cursor()
+    sql3 = "DROP TABLE IF EXISTS attTBL"
+    cur.execute(sql3)
+    cur.close()
+    await interaction.response.send_message(f"데이터베이스 초기화를 완료하였습니다.")
+
+@bot.tree.command(name="absentees")
+async def checkAbs(interaction:discord.Interaction):
+    conn = sqlite3.connect('Attendance.db')
+    cur = conn.cursor()
+    sql4 = "SELECT name FROM attTBL"
+    cur.execute(sql4)
+    appeared = []
+    for row in cur:
+        appeared.append(list(row))
+    appeared2 = list(itertools.chain(*appeared))
+    members = ['김세연', '김주미', '양진']
+    for i in appeared2:
+        members.remove(i)
+    absent = members
+    await interaction.response.send_message(f"출석 하지 않은 분들 명단 {absent}")
+    cur.close()
+
+bot.run(TOKEN)
